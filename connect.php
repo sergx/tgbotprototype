@@ -5,7 +5,7 @@
 class Connect extends basicClass {
     public function init(){
         if (php_sapi_name() == 'cli') {
-            // php -f /home/c/ci33756/bot.wincub.ru/public_html/bot/tgbotprototype/index.php
+            // command in config.php
             // if run from console, set or delete webhook
             $action = 'delete';
             $action = WEBHOOK_URL;
@@ -16,13 +16,6 @@ class Connect extends basicClass {
         
         $content = file_get_contents("php://input");
         //$this->answer->techLog($content);
-        
-        /*
-        if(empty($content)){
-          $content = '{"message":{"message_id":319,"from":{"id":337506768,"is_bot":false,"first_name":"Sergey","last_name":"Khiliuta","username":"khiliuta","language_code":"ru"},"chat":{"id":337506768,"first_name":"Sergey","last_name":"Khiliuta","username":"khiliuta","type":"private"},"date":1520085240,"text":"/start"}}';
-        }
-        */
-        
         $update = json_decode($content, true);
         
         if (!$update) {
