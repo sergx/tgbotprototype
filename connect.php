@@ -5,7 +5,7 @@
 class Connect extends basicClass {
     public function init(){
         if (php_sapi_name() == 'cli') {
-            // php -f /home/c/ci33756/bot.wincub.ru/public_html/bot/WincubProtoFather/index.php
+            // php -f /home/c/ci33756/bot.wincub.ru/public_html/bot/tgbotprototype/index.php
             // if run from console, set or delete webhook
             $action = 'delete';
             $action = WEBHOOK_URL;
