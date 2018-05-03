@@ -51,34 +51,73 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
       $this->userData = $this->answer->greeting($message);
       //$this->answer->techLog($this->userData);
       
-      /*
-      // Пытаемся обработать команду в сообщении:
-      
-      foreach($this->comands as $v){
-        switch($v['data_type']){
-          case "text":
-            if(empty($message[$v['data_type']])){
-              continue;
-            }
-            if(strpos($message['text'], $v['content']) === 0){
-              $this->{$v['method_react']}(array("set_prev_question" => $v['set_prev_question']));
+      // Обработка команд и вопросов:
+      // Ввод понятия роутинг
+      if(!empty($message['text'])){
+        $command = $message['text'];
+        $prev_question = $this->userData['db_data']['prev_question'];
+        
+        //Очередь преоритетов - сперва команды, затем ответы на вопросы
+        foreach(array('command' => $command ,'question' => $prev_question) as $queue_key => $queue_elem){
+          if($queue_key === 'question' AND empty($queue_elem)){
+            break;
+          }
+          
+          foreach($this->answers() as $v){
+            $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
+            
+            if(in_array($queue_elem, $v[$queue_key])){
+              if($v['validation']){
+                $validate = $this->validation($message[$data_container],$v['validation']);
+              }else{
+                $validate = array('result' => true, 'value' => $message[$data_container]);
+              }
+              if($validate['result'] === true){
+                //$this->answer->techLog(123);
+                foreach($v['answer_ok'] as $string){
+                  
+                  // Вызываем специальный метод, либо просто обрабатываем строки
+                  if(strpos($string, "METHOD:") === 0){
+                    $methodName = substr($string, strlen("METHOD:"));
+                    //$method_result = 
+                    $this->answer->sendMessage($this->$methodName($validate['value']));
+                  }elseif(strpos($string, "<?php") === 0){
+                    $string_to_eval = substr($string, 5);
+                    $eval_result = eval($string_to_eval);
+                    $this->answer->sendMessage($eval_result);
+                  }else{
+                    if($validate['value']){
+                      $this->answer->sendMessage(str_replace("{value}", $validate['value'] ,$string));
+                    }
+                  }
+                }
+                // Записываем полученный ответ
+                //$this->answer->setUserJsonData($prev_question, $validate['value']);
+                // Устанавливаем новый prev_question
+                $this->answer->setPrevQuestion($v['next_question']);
+              }else{
+                $this->answer->sendMessage($v['answer_error']);
+                $this->answer->setPrevQuestion($v['next_question_onerror']);
+              }
               goto reacted;
             }
-            break;
+          }
         }
       }
       
-      */
+      
+      /*
       
       // Преоритетно обрабатываем команды
       if(!empty($message['text'])){
         $command = $message['text'];
         foreach($this->answers() as $v){
+          $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
           if(in_array($command, $v['command'])){
             if($v['validation']){
-              $validate = $this->validation($message[$v['data_container']],$v['validation']);
+              $validate = $this->validation($message[$data_container],$v['validation']);
             }else{
-              $validate = array('result' => true, 'value' => $message['text']);
+              $validate = array('result' => true, 'value' => $message[$data_container]);
             }
             if($validate['result'] === true){
               //$this->answer->techLog(123);
@@ -89,12 +128,14 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                   $methodName = substr($string, strlen("METHOD:"));
                   //$method_result = 
                   $this->answer->sendMessage($this->$methodName($validate['value']));
+                }elseif(strpos($string, "<?php") === 0){
+                  $string_to_eval = substr($string, 5);
+                  $eval_result = eval($string_to_eval);
+                  $this->answer->sendMessage($eval_result);
                 }else{
                   if($validate['value']){
                     $this->answer->sendMessage(str_replace("{value}", $validate['value'] ,$string));
-                  }//else{
-                    //$this->answer->sendMessage($string);
-                  //}
+                  }
                 }
               }
               // Записываем полученный ответ
@@ -103,6 +144,7 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
               $this->answer->setPrevQuestion($v['next_question']);
             }else{
               $this->answer->sendMessage($v['answer_error']);
+              $this->answer->setPrevQuestion($v['next_question_onerror']);
             }
             goto reacted;
           }
@@ -111,15 +153,16 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
       
       // Обрабатывает ответ на prev_question
       
-      $prev_question = $this->userData['db_data']['prev_question'];
+      
       //$prev_question = "volume";
       if($prev_question){
         foreach($this->answers() as $v){
+          $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
           if(in_array($prev_question, $v['question'])){
             if($v['validation']){
-              $validate = $this->validation($message[$v['data_container']],$v['validation']);
+              $validate = $this->validation($message[$data_container],$v['validation']);
             }else{
-              $validate = array('result' => true, 'value' => $message[$v['data_container']]);
+              $validate = array('result' => true, 'value' => $message[$data_container]);
             }
             
             if($validate['result'] === true){
@@ -131,12 +174,14 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                   $methodName = substr($string, strlen("METHOD:"));
                   //$method_result = 
                   $this->answer->sendMessage($this->$methodName($validate['value']));
+                }elseif(strpos($string, "EVAL:") === 0){
+                  $string_to_eval = substr($string, 4);
+                  $eval_result = eval($string_to_eval);
+                  $this->answer->sendMessage($eval_result);
                 }else{
                   if($validate['value']){
                     $this->answer->sendMessage(str_replace("{value}", $validate['value'] ,$string));
-                  }//else{
-                    //$this->answer->sendMessage($string);
-                  //}
+                  }
                 }
               }
               // Записываем полученный ответ
@@ -145,6 +190,7 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
               $this->answer->setPrevQuestion($v['next_question']);
             }else{
               $this->answer->sendMessage($v['answer_error']);
+              $this->answer->setPrevQuestion($v['next_question_onerror']);
             }
             goto reacted;
           }
@@ -154,6 +200,7 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
           //if()
         }
       }
+      */
       $this->answer->sendMessage("Нда, и вот что мне теперь с этим делать - не понятно...");
       
       reacted:
@@ -165,78 +212,46 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
       
       $getUserInfo = $this->db->query("SELECT answers FROM ".MAIN_TABLE." WHERE id = '".BOT_PROTO_ID."' LIMIT 1");
       $response_array = json_decode($getUserInfo['answers'], true);
-      
-      /*
-      $response_array_old = array(
-//    array(
-//      "command" => "/start"
-//      "question" => ""
-//      ,"data_container" => "text"
-//      ,"validation" => ""
-//      ,"answer_ok" => array(
-//        "Ясно, *{value}* литров."
-//        ,"Напишите сколько стоит транспортировка 1 литра на 1 км")
-//      ,"answer_error" => ""
-//      )
-//    ,
-        array(
-          "question" => ["volume"]
-          ,"next_question" => "price"
-          ,"data_container" => "text"
-          ,"validation" => "questionvolume"
-          ,"answer_ok" => array(
-            "Ясно, *{value}* литров."
-            ,"Напишите сколько стоит транспортировка 1 литра на 1 км")
-          ,"answer_error" => "Хм, что вы имели в виду? Я бы понял, если бы Вы указали кол-во литров *числом*!:)"
-          )
-        ,array(
-          "question" => ["price"]
-          ,"next_question" => "location"
-          ,"data_container" => "text"
-          ,"validation" => "questionprice"
-          ,"answer_ok" => array(
-            "Окей, *{value}* рублей за перевозку литра на *1 км.*"
-            ,"Теперь отправьте *точку на карте*, куда вы бы хотели получить доставку.")
-          ,"answer_error" => "Хм, что вы имели в виду? Я бы понял, если бы Вы указали стоимость *числом*!:)"
-          )
-        ,array(
-          "question" => ["location","full"]
-          ,"data_container" => "location"
-          ,"next_question" => "full"
-          ,"validation" => "questionlocation"
-          ,"answer_ok" => array(
-            "Запрос получен. Счетаем стоимость до координат *{value}*"
-            , "METHOD:getGoogleApi" // $this->getGoogleApi($location)
-            , "Чтобы произвести новый расчет введите [/start]")
-          ,"answer_error" => "Для расчета необходимо указать точку на карте.."
-          )
-        );
-        
-        $this->answer->techLog($response_array_old);
-        */
-        return $response_array;
+      return $response_array;
     }
     
     public function validation($input, $type){
       $validation = array("result" => false, "value" => false);
       switch($type){
-        case "questionvolume":
-          if($input == (int)$input){
-            $validation['value'] = (int)$input;
-            $validation['result'] = true;
-          }
-          break;
-        case "questionprice":
-          $input = $this->tools->tofloat($input);
-          if($input){
+        case "enter-riddle":
+          if(strtolower($input) === "friend"){
             $validation['value'] = $input;
             $validation['result'] = true;
           }
           break;
-        case "questionlocation":
-          if(!empty($input)){
-            $validation['value'] = implode(",", $input);
-            $validation['result'] = true;
+        case "enter-the-mine?":
+          switch(strtolower($input)){
+            case "/yes":
+            case "yes":
+            case "/okey":
+            case "okey":
+              $validation['value'] = $input;
+              $validation['result'] = true;
+              break;
+            case "/no":
+            case "no":
+              $validation['value'] = $input;
+              $validation['result'] = false;
+              break;
+          }
+          break;
+        case "entered-the-mine":
+          switch(strtolower($input)){
+            case "/runintothemines":
+            case "runintothemines":
+            case "run into the mines":
+              $validation['value'] = $input;
+              $validation['result'] = true;
+              break;
+            case "/smokeApipe":
+              $validation['value'] = $input;
+              $validation['result'] = false;
+              break;
           }
           break;
       }
