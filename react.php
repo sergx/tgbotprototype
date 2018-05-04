@@ -51,13 +51,12 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
       $this->userData = $this->answer->greeting($message);
       //$this->answer->techLog($this->userData);
       
-      // Обработка команд и вопросов:
-      // Ввод понятия роутинг
+      // Commands and Questions handling:
       if(!empty($message['text'])){
         $command = $message['text'];
         $prev_question = $this->userData['db_data']['prev_question'];
         
-        //Очередь преоритетов - сперва команды, затем ответы на вопросы
+        // Commands first. If no commands, than questions handling
         foreach(array('command' => $command ,'question' => $prev_question) as $queue_key => $queue_elem){
           if($queue_key === 'question' AND empty($queue_elem)){
             break;
@@ -67,6 +66,31 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
             $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
             
             if(in_array($queue_elem, $v[$queue_key])){
+              
+              // Routing
+              if(!empty($v['routing'][0])){
+                foreach($v['routing'] as $r){
+                  $route = explode("----",$r);
+                  array_walk($route, function (&$value) {
+                    $value = explode("||",trim($value));
+                  });
+                  
+                  // $route[0] - array of valid input commands
+                  // $route[1] - array of messages to send
+                  // $route[2][0] - prev_question to set
+                  
+                  if(in_array($message[$data_container], $route[0])){
+                    foreach($route[1] as $route_answer){
+                      $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer));
+                    }
+                    $this->answer->setPrevQuestion(!empty($route[2][0]) ? $route[2][0] : false);
+                    goto reacted;
+                  }
+                  
+                }
+              }
+              //$this->answer->techLog(print_r($route, true));
+              
               if($v['validation']){
                 $validate = $this->validation($message[$data_container],$v['validation']);
               }else{
@@ -92,7 +116,7 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                   }
                 }
                 // Записываем полученный ответ
-                //$this->answer->setUserJsonData($prev_question, $validate['value']);
+                // $this->answer->setUserJsonData($prev_question, $validate['value']);
                 // Устанавливаем новый prev_question
                 $this->answer->setPrevQuestion($v['next_question']);
               }else{
@@ -105,102 +129,6 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
         }
       }
       
-      
-      /*
-      
-      // Преоритетно обрабатываем команды
-      if(!empty($message['text'])){
-        $command = $message['text'];
-        foreach($this->answers() as $v){
-          $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
-          if(in_array($command, $v['command'])){
-            if($v['validation']){
-              $validate = $this->validation($message[$data_container],$v['validation']);
-            }else{
-              $validate = array('result' => true, 'value' => $message[$data_container]);
-            }
-            if($validate['result'] === true){
-              //$this->answer->techLog(123);
-              foreach($v['answer_ok'] as $string){
-                
-                // Вызываем специальный метод, либо просто обрабатываем строки
-                if(strpos($string, "METHOD:") === 0){
-                  $methodName = substr($string, strlen("METHOD:"));
-                  //$method_result = 
-                  $this->answer->sendMessage($this->$methodName($validate['value']));
-                }elseif(strpos($string, "<?php") === 0){
-                  $string_to_eval = substr($string, 5);
-                  $eval_result = eval($string_to_eval);
-                  $this->answer->sendMessage($eval_result);
-                }else{
-                  if($validate['value']){
-                    $this->answer->sendMessage(str_replace("{value}", $validate['value'] ,$string));
-                  }
-                }
-              }
-              // Записываем полученный ответ
-              //$this->answer->setUserJsonData($prev_question, $validate['value']);
-              // Устанавливаем новый prev_question
-              $this->answer->setPrevQuestion($v['next_question']);
-            }else{
-              $this->answer->sendMessage($v['answer_error']);
-              $this->answer->setPrevQuestion($v['next_question_onerror']);
-            }
-            goto reacted;
-          }
-        }
-      }
-      
-      // Обрабатывает ответ на prev_question
-      
-      
-      //$prev_question = "volume";
-      if($prev_question){
-        foreach($this->answers() as $v){
-          $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
-          if(in_array($prev_question, $v['question'])){
-            if($v['validation']){
-              $validate = $this->validation($message[$data_container],$v['validation']);
-            }else{
-              $validate = array('result' => true, 'value' => $message[$data_container]);
-            }
-            
-            if($validate['result'] === true){
-              //$this->answer->techLog(123);
-              foreach($v['answer_ok'] as $string){
-                
-                // Вызываем специальный метод, либо просто обрабатываем строки
-                if(strpos($string, "METHOD:") === 0){
-                  $methodName = substr($string, strlen("METHOD:"));
-                  //$method_result = 
-                  $this->answer->sendMessage($this->$methodName($validate['value']));
-                }elseif(strpos($string, "EVAL:") === 0){
-                  $string_to_eval = substr($string, 4);
-                  $eval_result = eval($string_to_eval);
-                  $this->answer->sendMessage($eval_result);
-                }else{
-                  if($validate['value']){
-                    $this->answer->sendMessage(str_replace("{value}", $validate['value'] ,$string));
-                  }
-                }
-              }
-              // Записываем полученный ответ
-              //$this->answer->setUserJsonData($prev_question, $validate['value']);
-              // Устанавливаем новый prev_question
-              $this->answer->setPrevQuestion($v['next_question']);
-            }else{
-              $this->answer->sendMessage($v['answer_error']);
-              $this->answer->setPrevQuestion($v['next_question_onerror']);
-            }
-            goto reacted;
-          }
-        }
-      }else{
-        foreach($this->answers() as $v){
-          //if()
-        }
-      }
-      */
       $this->answer->sendMessage("Нда, и вот что мне теперь с этим делать - не понятно...");
       
       reacted:
