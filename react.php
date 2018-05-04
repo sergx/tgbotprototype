@@ -79,9 +79,21 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                   // $route[1] - array of messages to send
                   // $route[2][0] - prev_question to set
                   
-                  if(in_array($message[$data_container], $route[0])){
+                  if(in_array($message[$data_container], $route[0]) || /* $route[0][0] === "ANITHING" */ in_array("ANITHING", $route[0])){
                     foreach($route[1] as $route_answer){
-                      $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer));
+                      
+                      // Вызываем специальный метод, либо просто обрабатываем строки
+                      if(strpos($route_answer, "METHOD:") === 0){
+                        $methodName = substr($route_answer, strlen("METHOD:"));
+                        //$method_result = 
+                        $this->answer->sendMessage($this->$methodName($message[$data_container]));
+                      }elseif(strpos($route_answer, "<?php") === 0){
+                        $string_to_eval = substr($route_answer, 5);
+                        $eval_result = eval($string_to_eval);
+                        $this->answer->sendMessage($eval_result);
+                      }else{
+                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer));
+                      }
                     }
                     $this->answer->setPrevQuestion(!empty($route[2][0]) ? $route[2][0] : false);
                     goto reacted;
