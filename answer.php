@@ -36,14 +36,28 @@ class Answer extends basicClass {
       'text' => $text
       );
     if($reply_markup){
-      //$this->techLog(print_r($reply_markup, true));
-      //$dataToSend['reply_markup']['inline_keyboard'] = $reply_markup;
-      $dataToSend['reply_markup']['keyboard'] = $reply_markup;
-      $dataToSend['reply_markup']['resize_keyboard'] = true;
-      $dataToSend['reply_markup']['one_time_keyboard'] = true;
+      
+      $dataToSend['reply_markup']['inline_keyboard'] = array(
+        array(
+          array(
+            "text" => "friend"
+            ,"callback_data" => "friend"
+            ),
+          array(
+            "text" => "enemy"
+            ,"callback_data" => "enemy"
+            ),
+          )
+        );
+      
+      //$dataToSend['reply_markup']['keyboard'] = $reply_markup;
+      //$dataToSend['reply_markup']['resize_keyboard'] = true;
+      //$dataToSend['reply_markup']['one_time_keyboard'] = true;
+      //$this->techLog(print_r($dataToSend, true));
     }else{
       $dataToSend['reply_markup']['remove_keyboard'] = true;
     }
+    
     
     $this->connect->apiRequestJson("sendMessage", $dataToSend);
       

@@ -26,6 +26,12 @@ class Connect extends basicClass {
         if (isset($update["message"])) {
           $this->react->init($update["message"]);
         }
+        //$exception_data = array();
+        //foreach($update['callback_query'] as $k => $v){
+        //  $exception_data[$k] = gettype($v);
+        //}
+        //throw new Exception(print_r($update['callback_query']['data'], true));
+        //throw new Exception($update['callback_query']['data']);
     }
     
     public function apiRequestWebhook($method, $parameters) {
