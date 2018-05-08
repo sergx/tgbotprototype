@@ -79,26 +79,42 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                   // $route[1] - array of messages to send
                   // $route[2][0] - prev_question to set
                   
-                  if(in_array($message[$data_container], $route[0]) || /* $route[0][0] === "ANITHING" */ in_array("ANITHING", $route[0])){
-                    foreach($route[1] as $route_answer){
+                  if(in_array($message[$data_container], $route[0]) || in_array("ANITHING", $route[0])){
+                    
+                    $btns = false;
+                    foreach($route[1] as $k => $route_answer){
                       
+                      if(strpos($route_answer, "BTNS:") === 0){
+                        $btns = explode("&",substr($route_answer, 5));
+                        array_walk($btns, function (&$value) {
+                          $value = array('text' => $value);
+                        });
+                        if(count($btns) > 3){
+                          $btns = array_chunk($btns, 3);
+                        }else{
+                          $btns = array($btns);
+                        }
+                        unset($route[1][$k]);
+                      }
+                    }
+                    
+                    foreach($route[1] as $route_answer){
                       // Вызываем специальный метод, либо просто обрабатываем строки
                       if(strpos($route_answer, "METHOD:") === 0){
                         $methodName = substr($route_answer, strlen("METHOD:"));
                         //$method_result = 
-                        $this->answer->sendMessage($this->$methodName($message[$data_container]));
+                        $this->answer->sendMessage($this->$methodName($message[$data_container]),$btns);
                       }elseif(strpos($route_answer, "<?php") === 0){
                         $string_to_eval = substr($route_answer, 5);
                         $eval_result = eval($string_to_eval);
-                        $this->answer->sendMessage($eval_result);
+                        $this->answer->sendMessage($eval_result,$btns);
                       }else{
-                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer));
+                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer),$btns);
                       }
                     }
                     $this->answer->setPrevQuestion(!empty($route[2][0]) ? $route[2][0] : false);
                     goto reacted;
                   }
-                  
                 }
               }
               //$this->answer->techLog(print_r($route, true));
