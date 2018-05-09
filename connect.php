@@ -26,6 +26,9 @@ class Connect extends basicClass {
         if (isset($update["message"])) {
           $this->react->init($update["message"]);
         }
+        
+        //**** TODO: Требуется обрабатывать присылаемые через $update['callback_query']['data'] сообщения из inline_keyboard (callback_data)
+        
         //$exception_data = array();
         //foreach($update['callback_query'] as $k => $v){
         //  $exception_data[$k] = gettype($v);
