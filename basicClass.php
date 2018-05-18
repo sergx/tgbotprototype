@@ -6,7 +6,13 @@ abstract class basicClass {
 	}
 	
 	public function __get($key) {
-		return $this->registry->get($key);
+	  //trigger_error($key, E_USER_DEPRECATED);
+	  if(!$this->registry){
+	    trigger_error($key, E_USER_DEPRECATED);
+	  }else{
+	    return $this->registry->get($key);
+	  }
+		
 	}
 	
 	public function __set($key, $value) {

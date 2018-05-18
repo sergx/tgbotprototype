@@ -53,6 +53,14 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
       
       // Commands and Questions handling:
       if(!empty($message['text'])){
+        
+        $this->db->setChatLog(array(
+          "chat" => $message['chat']['id'],
+          "t" => date("Y-m-d H:i:s"),
+          "s" => "u",
+          "data" => array("text" => $message['text']),
+        ));
+        
         $command = $message['text'];
         $prev_question = $this->userData['db_data']['prev_question'];
         
@@ -63,60 +71,88 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
           }
           
           foreach($this->answers() as $v){
-            $data_container = !empty($v['data_container']) ? $v['data_container'] : "text";
+            $data_container = !empty($v['data_container'][0]) ? $v['data_container'][0] : "text";
             
             if(in_array($queue_elem, $v[$queue_key])){
               
               // Routing
               if(!empty($v['routing'][0])){
-                foreach($v['routing'] as $r){
-                  $route = explode("----",$r);
-                  array_walk($route, function (&$value) {
-                    $value = explode("||",trim($value));
-                  });
+                foreach($v['routing'] as $route){
+                  //$route = explode("----",$r);
                   
-                  // $route[0] - array of valid input commands
-                  // $route[1] - array of messages to send
-                  // $route[2][0] - prev_question to set
+                  //array_walk($route, function (&$value) {
+                  //  $value = explode("||",trim($value));
+                  //});
                   
-                  if(in_array($message[$data_container], $route[0]) || in_array("ANITHING", $route[0])){
+                  // $route[0] $route['input_data'] - array of valid input commands
+                  // $route[1] $route['response'] - array of messages to send
+                  // $route[2][0] $route['next_question'] - prev_question to set
+                  
+                  if(in_array($message[$data_container], $route['input_data']) || in_array("ANYTHING", $route['input_data'])){
                     
-                    $btns = false;
-                    foreach($route[1] as $k => $route_answer){
-                      
-                      if(strpos($route_answer, "BTNS:") === 0){
-                        $btns = explode("&",substr($route_answer, 5));
-                        array_walk($btns, function (&$value) {
-                          $value = array('text' => $value);
-                        });
-                        if(count($btns) > 3){
-                          $btns = array_chunk($btns, 3);
-                        }else{
-                          $btns = array($btns);
+                    foreach($route['response'] as $k => $route_answer){
+                      $reply_markup = false;
+                      if(!empty($route_answer['buttons_type'])){
+                        if(empty($route_answer['buttons'][0])){
+                          $this->answer->techLog("Error on line ".__LINE__.'. $route_answer["buttons"] is empty');
                         }
-                        unset($route[1][$k]);
+                        
+                        switch($route_answer['buttons_type']){
+                          
+                          case "ReplyKeyboardMarkup":
+                            $reply_markup = array(
+                              'keyboard' => $route_answer['buttons'],
+                              'resize_keyboard'=> true,
+                              'one_time_keyboard'=> true,
+                              );
+                            array_walk($reply_markup['keyboard'], function (&$value) {
+                              $value = array('text' => $value);
+                            });
+                            $reply_markup['keyboard'] = array_chunk($reply_markup['keyboard'], 3);
+                            //$this->answer->techLog(print_r($reply_markup, true));
+                            break;
+                            
+                          case "InlineKeyboardMarkup":
+                            $reply_markup = array(
+                              'inline_keyboard' => $route_answer['buttons']
+                              );
+                            array_walk($reply_markup['inline_keyboard'], function (&$value) {
+                              if(strpos("==", $value) !== -1){
+                                $t_val = explode("==", $value);
+                                $value = array('text' => $t_val[0], 'callback_data' => $t_val[1]);
+                              }else{
+                                $value = array('text' => $value, 'callback_data' => $value);
+                              }
+                            });
+                            $reply_markup['inline_keyboard'] = array_chunk($reply_markup['inline_keyboard'], 3);
+                            break;
+                            
+                        }
                       }
-                    }
-                    
-                    foreach($route[1] as $route_answer){
+                      
                       // Вызываем специальный метод, либо просто обрабатываем строки
-                      if(strpos($route_answer, "METHOD:") === 0){
-                        $methodName = substr($route_answer, strlen("METHOD:"));
+                      if(strpos($route_answer['response_text'], "METHOD:") === 0){
+                        $methodName = substr($route_answer['response_text'], strlen("METHOD:"));
                         //$method_result = 
-                        $this->answer->sendMessage($this->$methodName($message[$data_container]),$btns);
-                      }elseif(strpos($route_answer, "<?php") === 0){
-                        $string_to_eval = substr($route_answer, 5);
+                        $this->answer->sendMessage($this->$methodName($message[$data_container]),$reply_markup);
+                      }elseif(strpos($route_answer['response_text'], "<?php") === 0){
+                        $string_to_eval = substr($route_answer['response_text'], strlen("<?php"));
                         $eval_result = eval($string_to_eval);
-                        $this->answer->sendMessage($eval_result,$btns);
+                        $this->answer->sendMessage($eval_result,$reply_markup);
                       }else{
-                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer),$btns);
+                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer['response_text']),$reply_markup);
                       }
+                      
                     }
-                    $this->answer->setPrevQuestion(!empty($route[2][0]) ? $route[2][0] : false);
+                    $this->answer->setPrevQuestion(!empty($route['next_question']) ? $route['next_question'] : false);
                     goto reacted;
                   }
                 }
               }
+              
+              
+              
+              
               //$this->answer->techLog(print_r($route, true));
               
               if($v['validation']){
@@ -164,10 +200,14 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
     
     // Функця, отвечающая за отправку сообщение в ответ на prev_question
     public function answers() {
-      //Массив данных будет хранится где-то
       
-      $getUserInfo = $this->db->query("SELECT answers FROM ".MAIN_TABLE." WHERE id = '".BOT_PROTO_ID."' LIMIT 1");
-      $response_array = json_decode($getUserInfo['answers'], true);
+      //$getUserInfo = $this->db->query("SELECT answers FROM ".MAIN_TABLE." WHERE id = '".BOT_PROTO_ID."' LIMIT 1");
+      //$response_array = json_decode($getUserInfo['answers'], true);
+      
+      $response_array = json_decode(file_get_contents('buben-db/answersdata.json'), true);
+      
+      
+      
       return $response_array;
     }
     

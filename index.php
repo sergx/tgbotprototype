@@ -14,8 +14,12 @@ require_once('basicClass.php');
 require_once('bot.php');
 $bot = new Bot($registry);
 
-require_once('db.php');
-$db = new DB(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+//require_once('db.php');
+//$db = new DB(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+//$registry->set('db', $db);
+
+require_once('db-buben.php');
+$db = new BubenDB($registry);
 $registry->set('db', $db);
 
 require_once('tools.php');

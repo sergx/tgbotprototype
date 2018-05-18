@@ -13,7 +13,7 @@ function catchError($errno, $errstr, $errfile = '', $errline = ''){
     //echo $message;
     $data = array(
             "errorMSG" =>array(
-              "botName" => "WincubProtoFather"
+              "botName" => "tgbotprototype"
               ,"content" => $message
               )
             );
@@ -28,7 +28,7 @@ function catchError($errno, $errstr, $errfile = '', $errline = ''){
     );
 
 $context  = stream_context_create($opts);
-    file_get_contents('https://bot.wincub.ru/bot/WincubErrorLogBot/index.php', false, $context);
+    file_get_contents('https://bot.wincub.ru/WincubErrorLogBot/index.php', false, $context);
     exit();
 }
 function ShutDown(){

@@ -1,6 +1,7 @@
 <?php
 
 class DB extends basicClass {
+  
     private $link;
     public function __construct($hostname, $username, $password, $database) {
         if (!$this->link = mysql_connect($hostname, $username, $password)) {
