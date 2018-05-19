@@ -14,7 +14,7 @@ require_once('basicClass.php');
 require_once('bot.php');
 $bot = new Bot($registry);
 
-//require_once('db.php');
+//require_once('db-mysql.php');
 //$db = new DB(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 //$registry->set('db', $db);
 

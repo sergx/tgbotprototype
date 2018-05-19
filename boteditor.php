@@ -1,4 +1,5 @@
 <?php
+require_once '../sae/auth.php';
 if($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST['answersdata'])){
   
   $answersdata = $_POST['answersdata'];
@@ -59,7 +60,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST['answersdata'])){
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Advanced JSON Editor Example</title>
+    <title>BotEditor JSON</title>
     <!--<link rel="stylesheet" id="theme_stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">-->
     <link rel="stylesheet" id="theme_stylesheet" href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css">
     
@@ -69,21 +70,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST['answersdata'])){
     <script src="//cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.1/js/standalone/selectize.js"></script>
   </head>
   <body>
+    <style>
+      #editor_holder > div > .well{
+        background-color: transparent;
+        border:none;
+        padding: 0;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+      }
+    </style>
     <div class="container">
-      <h1>Advanced JSON Editor Example</h1>
+      <h1>BotEditor JSON</h1>
       
-      <p>This example demonstrates the following:</p>
-      <ul>
-        <li>Loading external schemas via ajax (using $ref)</li>
-        <li>Setting the editor's value from javascript (try the Restore to Default button)</li>
-        <li>Validating the editor's contents (try setting name to an empty string)</li>
-        <li>Macro templates (try changing the city or state fields and watch the citystate field update automatically)</li>
-        <li>Enabling and disabling editor fields</li>
-      </ul>
-      
-      <button id='submit'>Submit (console.log)</button>
-      <button id='restore'>Restore to Default</button>
-      <button id='enable_disable'>Disable/Enable Form</button>
+      <button id='submit'>Save</button>
       <span id='valid_indicator'></span>
       
       <div id='editor_holder'></div>

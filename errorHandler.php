@@ -27,13 +27,13 @@ function catchError($errno, $errstr, $errfile = '', $errline = ''){
         )
     );
 
-$context  = stream_context_create($opts);
+    $context  = stream_context_create($opts);
     file_get_contents('https://bot.wincub.ru/WincubErrorLogBot/index.php', false, $context);
     exit();
 }
 function ShutDown(){
     $lasterror = error_get_last();
-    if(!in_array($lasterror['type'], array(E_DEPRECATED) )){
+    if(!is_null($lasterror) AND !in_array($lasterror['type'], array(E_DEPRECATED) )){
         catchError($lasterror['type'],$lasterror['message'],$lasterror['file'],$lasterror['line']);
     }
 }

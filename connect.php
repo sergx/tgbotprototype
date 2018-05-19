@@ -1,7 +1,4 @@
 <?php
-// Подключение к Телеграм АПИ
-// Подключение к БД
-// Обработка запросов БД
 class Connect extends basicClass {
     public function init(){
         if (php_sapi_name() == 'cli') {
