@@ -1,4 +1,5 @@
 # Lines starting with '#' are considered comments.
 config.php
 buben-db/backup/
-.gitignore
+buben-db/chat_log.json
+buben-db/chats.json
