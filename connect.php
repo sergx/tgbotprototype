@@ -19,10 +19,26 @@ class Connect extends basicClass {
             // receive wrong update, must not happen
             exit;
         }
+        // Костыль, который режет особенности inline_keyboard (callback_data)
+        
+        if (isset($update['callback_query']['data'])) {
+          $this->answer->techLog("Костыль inline_keyboard. Значение кнопки: '".$update['callback_query']['data']."'");
+          $update["message"]['from'] = $update['callback_query']['from'];
+          $update["message"]['chat'] = $update['callback_query']['message']['chat'];
+          $update["message"]['text'] = $update['callback_query']['data'];
+        }
+        
         
         if (isset($update["message"])) {
           $this->react->init($update["message"]);
         }
+        /*
+        if (isset($update['callback_query']['data'])) {
+          $this->answer->techLog(print_r($update, true));
+          $this->answer->techLog('inline_keyboard. From $update["callback_query"]["data"] ' . "on line ".__LINE__);
+          $this->react->init($update['callback_query']['data']);
+        }
+        */
         
         //**** TODO: Требуется обрабатывать присылаемые через $update['callback_query']['data'] сообщения из inline_keyboard (callback_data)
         

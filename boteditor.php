@@ -40,7 +40,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST['answersdata'])){
   $fwrite_info = array_merge($fwrite_info,array(
     'fwriten' => $fwriten,
     'strlen' => strlen($answersdata),
-    'status' => $fwrite_info['strlen'] === $fwrite_info['fwriten'] ? true : false,
+    'status' => strlen($answersdata) === $fwriten ? true : false,
     ));
   
   fclose($file);

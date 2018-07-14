@@ -138,9 +138,9 @@ https://core.telegram.org/bots/api#replykeyboardmarkup
                       }elseif(strpos($route_answer['response_text'], "<?php") === 0){
                         $string_to_eval = substr($route_answer['response_text'], strlen("<?php"));
                         $eval_result = eval($string_to_eval);
-                        $this->answer->sendMessage($eval_result,$reply_markup);
+                        $this->answer->sendMessage($eval_result, $reply_markup);
                       }else{
-                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer['response_text']),$reply_markup);
+                        $this->answer->sendMessage(str_replace("{value}", $message[$data_container], $route_answer['response_text']), $reply_markup);
                       }
                       
                     }
